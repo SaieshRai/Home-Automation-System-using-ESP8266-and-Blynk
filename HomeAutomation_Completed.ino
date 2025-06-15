@@ -1,45 +1,26 @@
-
-//#define BLYNK_PRINT Serial  
-
-
-
-       
 #include <BlynkSimpleEsp8266.h> 
 #include <Adafruit_NeoPixel.h>
 #define PIN 9 
 #define NUMPIXELS  19 //SD2
 Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
-
-// define the GPIO connected with Relays and switches
-
 #define RelayPin1 14 //D5
 #define RelayPin2 12 //D6
 #define Buzzer 13   //D7
-
 #define SwitchPin1 10  //SD3
 #define SwitchPin2 0   //D3 
 #define Exhaust 16 //D0
 #define sensor 3//RX //fire_sensor
-
-
 #define VPIN_BUTTON_1    V1 
 #define VPIN_BUTTON_2    V2
 #define VPIN_GAS         V3
 #define VPIN_ALARM       V4
-
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
-
 LiquidCrystal_I2C lcd(0x27, 16, 2);
- 
- //defining ON/OFF State for Relay
-int toggleState_1 = 1; //Define integer to remember the toggle state for relay 1
-int toggleState_2 = 1; //Define integer to remember the toggle state for relay 2
+int toggleState_1 = 1; 
+int toggleState_2 = 1; 
 int sensor_in =0;
 int flame_in = HIGH;
-
-
-
 int wifiFlag = 0;
 int flag = 0;
 #define BLYNK_TEMPLATE_ID ""
@@ -47,20 +28,18 @@ int flag = 0;
 #define AUTH ""               // You should get Auth Token in the Blynk App.  
 #define WIFI_SSID "OnePlus 12R"             //Enter Wifi Name
 #define WIFI_PASS "12345679"         //Enter wifi Password
-
-//get wifi MAX & MIN Value
-const int MAX_VAL = -57; // define maximum signal strength (in dBm)
-const int MIN_VAL = -120; // define minimum signal strength (in dBm)
+const int MAX_VAL = -57; 
+const int MIN_VAL = -120; 
 
 BlynkTimer timer;
 
-//Regulate the relay
+
 void relayOnOff(int relay){
 
     switch(relay){
       case 1: 
              if(toggleState_1 == 1){
-              digitalWrite(RelayPin1, LOW); // turn on relay 1
+              digitalWrite(RelayPin1, LOW); 
               toggleState_1 = 0;
               Serial.println("Device1 ON");
                lcd.setCursor(3, 0);
@@ -69,7 +48,7 @@ void relayOnOff(int relay){
                 lcd.clear();
               }
              else{
-              digitalWrite(RelayPin1, HIGH); // turn off relay 1
+              digitalWrite(RelayPin1, HIGH); 
               toggleState_1 = 1;
               Serial.println("Device1 OFF");
               lcd.setCursor(3, 0);
@@ -81,7 +60,7 @@ void relayOnOff(int relay){
       break;
       case 2: 
              if(toggleState_2 == 1){
-              digitalWrite(RelayPin2, LOW); // turn on relay 2
+              digitalWrite(RelayPin2, LOW); 
               toggleState_2 = 0;
               Serial.println("Device2 ON");
               lcd.setCursor(3, 0);
@@ -90,7 +69,7 @@ void relayOnOff(int relay){
                 lcd.clear();
               }
              else{
-              digitalWrite(RelayPin2, HIGH); // turn off relay 2
+              digitalWrite(RelayPin2, HIGH); 
               toggleState_2 = 1;
               Serial.println("Device2 OFF");
               lcd.setCursor(3, 0);
@@ -105,24 +84,24 @@ void relayOnOff(int relay){
   
 }
 
-void with_internet(){ //Called when internet is connected 
-    //App relay Control
+void with_internet(){ 
+    
     if (digitalRead(SwitchPin1) == LOW){
       Serial.println(digitalRead(SwitchPin1));
       delay(200);
       relayOnOff(1); 
-      Blynk.virtualWrite(VPIN_BUTTON_1, toggleState_1); // Update Button Widget 
+      Blynk.virtualWrite(VPIN_BUTTON_1, toggleState_1);  
    
     }
     else if (digitalRead(SwitchPin2) == LOW){
       delay(200);
       relayOnOff(2);      
-      Blynk.virtualWrite(VPIN_BUTTON_2, toggleState_2);   // Update Button Widget
+      Blynk.virtualWrite(VPIN_BUTTON_2, toggleState_2);   
       
     }
 }
-void without_internet(){ //Called when offline
-    //Manual Switch Control
+void without_internet(){ 
+   
     if (digitalRead(SwitchPin1) == LOW){
       relayOnOff(1);      
     }
@@ -131,19 +110,9 @@ void without_internet(){ //Called when offline
     }
 }
 
-/*BLYNK_CONNECTED() {
-  // Request the latest state from the server
-  Blynk.syncVirtual(VPIN_BUTTON_1);
-  Blynk.syncVirtual(VPIN_BUTTON_2);
-  Blynk.syncVirtual(VPIN_GAS);
-  //Blynk.syncVirtual(VPIN_ALARM);
-  
-} */
-
-// When App button is pushed - switch the relay
 BLYNK_WRITE(VPIN_BUTTON_1) {
-  toggleState_1 = param.asInt(); //pushes the value as 1 or 0 to togglestate that turns relay off or on
-  if(toggleState_1 == 0) { //relay is on for toggle state = 0
+  toggleState_1 = param.asInt(); 
+  if(toggleState_1 == 0) { 
     lcd.setCursor(3, 0);
     lcd.print("Device1 ON");
     Serial.println("Device1 ON");
@@ -162,7 +131,7 @@ BLYNK_WRITE(VPIN_BUTTON_1) {
 }
 
 BLYNK_WRITE(VPIN_BUTTON_2) {
-  toggleState_2 = param.asInt(); //pushes the value as 1 or 0 to togglestate that turns relay off or on
+  toggleState_2 = param.asInt(); 
   if(toggleState_2 == 0) {
     lcd.setCursor(3, 0);
     lcd.print("Device2 ON");
@@ -180,7 +149,7 @@ BLYNK_WRITE(VPIN_BUTTON_2) {
   digitalWrite(RelayPin2, toggleState_2);
 }
 
-//GAS Sensor Function
+
 void GAS_DETECT_ON() {
  
     Blynk.virtualWrite(V3, 1);
@@ -191,7 +160,7 @@ void GAS_DETECT_ON() {
     Blynk.virtualWrite(V1, 1);
     digitalWrite(RelayPin2, HIGH);
     Blynk.virtualWrite(V2, 1);
-    lcd.clear(); //Clears LCD before printing
+    lcd.clear(); 
     lcd.setCursor(2, 0);
     lcd.print("LEAKDETECTED");
     Serial.println("LEAKDETECTED");
@@ -211,19 +180,17 @@ void GAS_DETECT_ON() {
     lcd.clear();
   }
 
-
-//FLAME DETECTOR FUNCTION
 void FLAME_DETECT_ON() {
   
    Blynk.virtualWrite(V4, 1);
    Blynk.logEvent("fire");
-   digitalWrite(RelayPin1, HIGH); //Turns off Appliance connected at first relay for security purpose
+   digitalWrite(RelayPin1, HIGH); 
    Blynk.virtualWrite(V1, 1);
-   digitalWrite(RelayPin2, HIGH); //Turns off Appliance connected at second relay for security purpose
+   digitalWrite(RelayPin2, HIGH); 
    Blynk.virtualWrite(V2, 1);
-  // digitalWrite(15, LOW);
-   digitalWrite(Exhaust, LOW); //Turns on Exhaust Fan
-   lcd.clear(); //Clears LCD before printing
+  
+   digitalWrite(Exhaust, LOW); 
+   lcd.clear(); 
    lcd.setCursor(2, 0);
    lcd.print("FIREDETECTED");
    Serial.println("FIREDETECTED");
@@ -244,9 +211,7 @@ void FLAME_DETECT_OFF() {
   lcd.clear(); 
   
 }
-
-
-void checkBlynkStatus() { // called every 3 seconds by SimpleTimer
+void checkBlynkStatus() { 
 
   bool isconnected = Blynk.connected();
   if (isconnected == false) {
@@ -260,7 +225,7 @@ void checkBlynkStatus() { // called every 3 seconds by SimpleTimer
    delay(10);
 }
 
-void clearpixels() { //When called clears the initial colors on led strip
+void clearpixels() { 
   for (int i = 0; i < NUMPIXELS; i++) {
     pixels.setPixelColor(i, pixels.Color(  0,   0,   0));
   }
@@ -268,49 +233,38 @@ void clearpixels() { //When called clears the initial colors on led strip
   delay(10);
 }
 
-void setup() //initialize all the parameters
+void setup() 
 {
-  lcd.init();        //initializes the LCD Display
-  lcd.backlight(); //initializes the backlight of LCD Display
-  
-  WiFi.mode(WIFI_STA); //initialize ESP8266 as a station
+  lcd.init();        
+  lcd.backlight(); 
+  WiFi.mode(WIFI_STA); 
   WiFi.disconnect(); 
   delay(10);
-
-  WiFi.begin(WIFI_SSID, WIFI_PASS); //connects to network with mentioned SSID and Password
-
-  while (WiFi.status() != WL_CONNECTED) { //checks the connection status
+  WiFi.begin(WIFI_SSID, WIFI_PASS); 
+  while (WiFi.status() != WL_CONNECTED) { 
     WiFi.setAutoReconnect(true);
     WiFi.persistent(true);
     delay(10);
   }
-  
-  pixels.begin(); //initializes the LED Strip
-  pixels.show(); //initialize all pixels to 'off'
-  pixels.setBrightness(255); //sets the max brightness limit to 255
-  
-  
+  pixels.begin(); 
+  pixels.show(); 
+  pixels.setBrightness(255); 
   Serial.begin(9600);
-
-  pinMode(RelayPin1, OUTPUT); //Setting the pin to which RelayPin 1 is connected as output
-  pinMode(RelayPin2, OUTPUT); //Setting the pin to which RelayPin 2 is connected as output
-  pinMode(Buzzer, OUTPUT); //Setting the pin to which Buzzer is connected as output
-
-  pinMode(PIN, OUTPUT); //Setting the LED to which RelayPin 1 is connected as output
-  pinMode(SwitchPin1, INPUT_PULLUP); //Setting the pin to which switch 1 is connected as input
-  pinMode(SwitchPin2, INPUT_PULLUP); //Setting the pin to which RelayPin 2 is connected as input
-  pinMode(A0, INPUT); //Setting the pin to which GAS SENSOR is connected as input
+  pinMode(RelayPin1, OUTPUT); 
+  pinMode(RelayPin2, OUTPUT); 
+  pinMode(Buzzer, OUTPUT); 
+  pinMode(PIN, OUTPUT); 
+  pinMode(SwitchPin1, INPUT_PULLUP); 
+  pinMode(SwitchPin2, INPUT_PULLUP); 
+  pinMode(A0, INPUT); 
   pinMode(Exhaust, OUTPUT);
-  pinMode(sensor, INPUT); //Setting the pin to which flame sensor is connected as input
-  
-
-  //During Starting all Relays should TURN OFF
-  digitalWrite(RelayPin1, toggleState_1); //Setting the pin to which RelayPin 1 is connected as LOW(OFF) at startup
-  digitalWrite(RelayPin2, toggleState_2); //Setting the pin to which RelayPin 2 is connected as LOW(OFF) at startup
+  pinMode(sensor, INPUT); 
+  digitalWrite(RelayPin1, toggleState_1); 
+  digitalWrite(RelayPin2, toggleState_2); 
 
   WiFi.begin(WIFI_SSID, WIFI_PASS);
-  timer.setInterval(3000L, checkBlynkStatus); // check if Blynk server is connected every 3 seconds
-  Blynk.config(AUTH); //connects to Blynk server after the checking the defined Token
+  timer.setInterval(3000L, checkBlynkStatus); 
+  Blynk.config(AUTH); 
 }
 
 void checkconnection() {
@@ -328,23 +282,17 @@ void checkconnection() {
 void loop()
 {  
   
-   timer.run(); // Initiates SimpleTimer
+   timer.run(); 
   
   if (wifiFlag == 0) {
-    with_internet(); //calls the with_internet function
+    with_internet(); 
     delay(10);
   }
   else if (wifiFlag == 1) {
-    without_internet(); //calls the without_internet function 
+    without_internet(); 
     delay(10);
   }
 
-
-
-
- 
- 
-//Triggers the alarm for gas leakage
   sensor_in = analogRead(A0);
   delay(10);
   if(sensor_in>700) {
@@ -355,7 +303,7 @@ void loop()
     delay(10);
   }
 
-  //Triggers the alarm if flame is detected
+  
   flame_in = digitalRead(sensor);
   delay(10);
   if(flame_in == LOW) {
@@ -367,14 +315,7 @@ void loop()
     delay(10);
   }
   
-
-
-  
-
-  
-//Show the status of connection
-
-   if (wifiFlag == 1) { //sets the led strip to red if not connected to Blynk server
+   if (wifiFlag == 1) { 
         for(int i=0;i<NUMPIXELS;i++) {
         pixels.setPixelColor(i, 200,0,0); 
         pixels.show();
@@ -384,9 +325,9 @@ void loop()
    }
     
   else {
-    clearpixels(); //clears the previous red pixels 
-    long rssi = WiFi.RSSI(); //returns the strength value of wifi strength in decibels
-    int strength = map(rssi, MIN_VAL, MAX_VAL, 0, 18); //rssi returns a value between MIN_VAL & MAX_VAL which is then mapped to values between 0 to 18
+    clearpixels(); 
+    long rssi = WiFi.RSSI(); 
+    int strength = map(rssi, MIN_VAL, MAX_VAL, 0, 18); 
   
     for (int i = 0; i < strength; i++) {
     
@@ -470,10 +411,6 @@ void loop()
     Blynk.run();   
     lcd.setCursor(3, 0);
     lcd.print("Connected");
-    //lcd.setCursor(0,1);
-   // lcd.print("IP:");
-    //lcd.setCursor(3,1);
-    //lcd.print(WiFi.localIP());
    delay(200);
   }
      
